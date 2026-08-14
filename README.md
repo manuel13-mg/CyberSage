@@ -47,8 +47,3 @@ npm run preview
 
 ## License
 
-Add a `LICENSE` file to specify the project license.
-
----
-
-If you want, I can also remove the `readme/` folder (now duplicate) or add a `Frontend/README.md` with more details.
