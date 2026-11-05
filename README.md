@@ -52,3 +52,12 @@ npm run build
 Gemini credentials are read only by the backend from `Backend/.env`; never place them in frontend environment variables or commit `.env`. Set `DATABASE_URL` to a PostgreSQL SQLAlchemy URL for shared persistence. Run `python -m alembic upgrade head` before starting the API; the application does not silently create PostgreSQL schemas.
 
 Phase 2 provides target and assessment configuration only. It never starts a scanner, creates findings, or reports fabricated progress. Alembic is the schema authority; the API does not silently create or modify schemas at startup.
+
+## Development notes
+
+- The frontend uses Vite, React, and TypeScript. Source is under `Frontend/src/`.
+- Entry points: `Frontend/src/main.tsx` and `Frontend/index.html`.
+- Common directories:
+  - `src/` — UI shell, API client, and styles
+  - `Backend/app/` — FastAPI routes, models, validation, and persistence
+  - `Backend/alembic/` — database migrations
