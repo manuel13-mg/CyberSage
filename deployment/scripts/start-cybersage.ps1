@@ -39,10 +39,10 @@ function Write-Failure { Write-Host $args -ForegroundColor Red }
 
 function Write-Banner {
     Write-Host ""
-    Write-Host "╔════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║           CyberSage Startup Script            ║" -ForegroundColor Cyan
-    Write-Host "║     AI-Powered Security Assessment Platform    ║" -ForegroundColor Cyan
-    Write-Host "╚════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host "============================================================" -ForegroundColor Cyan
+    Write-Host "           CyberSage Startup Script" -ForegroundColor Cyan
+    Write-Host "     AI-Powered Security Assessment Platform" -ForegroundColor Cyan
+    Write-Host "============================================================" -ForegroundColor Cyan
     Write-Host ""
 }
 
@@ -55,7 +55,7 @@ function Test-Prerequisites {
     try {
         $pythonVersion = & python --version 2>&1
         if ($pythonVersion -match "Python 3\.1[12]") {
-            Write-Success "  ✓ Python: $pythonVersion"
+            Write-Success "  [OK] Python: $pythonVersion"
         } else {
             $errors += "Python 3.11+ required, found: $pythonVersion"
         }
@@ -67,7 +67,7 @@ function Test-Prerequisites {
     try {
         $nodeVersion = & node --version 2>&1
         if ($nodeVersion -match "v1[89]|v2[0-9]") {
-            Write-Success "  ✓ Node.js: $nodeVersion"
+            Write-Success "  [OK] Node.js: $nodeVersion"
         } else {
             $errors += "Node.js 18+ required, found: $nodeVersion"
         }
@@ -77,43 +77,43 @@ function Test-Prerequisites {
 
     # Check backend virtual environment
     if (Test-Path "Backend\.venv\Scripts\Activate.ps1") {
-        Write-Success "  ✓ Backend virtual environment exists"
+        Write-Success "  [OK] Backend virtual environment exists"
     } else {
         $errors += "Backend virtual environment not found. Run: cd Backend; python -m venv .venv"
     }
 
     # Check backend dependencies
     if (Test-Path "Backend\.venv\Lib\site-packages\fastapi") {
-        Write-Success "  ✓ Backend dependencies installed"
+        Write-Success "  [OK] Backend dependencies installed"
     } else {
         $errors += "Backend dependencies missing. Run: cd Backend; .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt"
     }
 
     # Check .env file
     if (Test-Path "Backend\.env") {
-        Write-Success "  ✓ Backend configuration exists"
+        Write-Success "  [OK] Backend configuration exists"
     } else {
-        Write-Warning "  ⚠ Backend .env not found. Copying from .env.example..."
+        Write-Warning "  [WARN] Backend .env not found. Copying from .env.example..."
         Copy-Item "Backend\.env.example" "Backend\.env"
         Write-Info "    Please edit Backend\.env to configure API keys and database"
     }
 
     # Check frontend dependencies
     if (Test-Path "Frontend\node_modules") {
-        Write-Success "  ✓ Frontend dependencies installed"
+        Write-Success "  [OK] Frontend dependencies installed"
     } else {
         $errors += "Frontend dependencies missing. Run: cd Frontend; npm install"
     }
 
     if ($errors.Count -gt 0) {
-        Write-Failure "`n✗ Prerequisite checks failed:"
+        Write-Failure "`n[ERROR] Prerequisite checks failed:"
         foreach ($error in $errors) {
             Write-Failure "  - $error"
         }
         exit 1
     }
 
-    Write-Success "`n✓ All prerequisite checks passed`n"
+    Write-Success "`n[SUCCESS] All prerequisite checks passed`n"
 }
 
 function Test-DatabaseConnection {
@@ -126,16 +126,15 @@ function Test-DatabaseConnection {
 
         if ($dbUrl -like "postgresql*") {
             Write-Info "  PostgreSQL database configured"
-            # TODO: Add actual connection test
-            Write-Success "  ✓ Database configuration found"
+            Write-Success "  [OK] Database configuration found"
         } elseif ($dbUrl -like "sqlite*") {
             Write-Info "  SQLite database configured (development mode)"
-            Write-Success "  ✓ Database configuration found"
+            Write-Success "  [OK] Database configuration found"
         } else {
-            Write-Warning "  ⚠ Unknown database type: $dbUrl"
+            Write-Warning "  [WARN] Unknown database type: $dbUrl"
         }
     } else {
-        Write-Warning "  ⚠ DATABASE_URL not found in .env, using default"
+        Write-Warning "  [WARN] DATABASE_URL not found in .env, using default"
     }
 }
 
@@ -146,12 +145,12 @@ function Start-DatabaseMigrations {
     try {
         & .\.venv\Scripts\python.exe -m alembic upgrade head 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
-            Write-Success "  ✓ Database migrations complete"
+            Write-Success "  [OK] Database migrations complete"
         } else {
-            Write-Warning "  ⚠ Migration warnings (check logs)"
+            Write-Warning "  [WARN] Migration warnings (check logs)"
         }
     } catch {
-        Write-Failure "  ✗ Migration failed: $_"
+        Write-Failure "  [ERROR] Migration failed: $_"
         exit 1
     } finally {
         Pop-Location
@@ -188,18 +187,18 @@ function Start-Backend {
 
         # Check if job failed
         if ($backendJob.State -eq "Failed") {
-            Write-Failure "  ✗ Backend failed to start"
+            Write-Failure "  [ERROR] Backend failed to start"
             Receive-Job $backendJob
             exit 1
         }
     }
 
     if ($backendReady) {
-        Write-Success "  ✓ Backend API is running at http://127.0.0.1:8000"
+        Write-Success "  [OK] Backend API is running at http://127.0.0.1:8000"
         Write-Info "    API Documentation: http://127.0.0.1:8000/docs"
         return $backendJob
     } else {
-        Write-Failure "  ✗ Backend failed to start within $maxAttempts seconds"
+        Write-Failure "  [ERROR] Backend failed to start within $maxAttempts seconds"
         Stop-Job $backendJob
         Remove-Job $backendJob
         exit 1
@@ -215,7 +214,7 @@ function Start-Frontend {
         try {
             & npm run build
             if ($LASTEXITCODE -eq 0) {
-                Write-Success "  ✓ Frontend build complete"
+                Write-Success "  [OK] Frontend build complete"
                 Write-Info "  Serving production build..."
 
                 $frontendJob = Start-Job -Name "CyberSage-Frontend" -ScriptBlock {
@@ -224,10 +223,10 @@ function Start-Frontend {
                 }
 
                 Start-Sleep -Seconds 2
-                Write-Success "  ✓ Frontend available at http://127.0.0.1:5173"
+                Write-Success "  [OK] Frontend available at http://127.0.0.1:5173"
                 return $frontendJob
             } else {
-                Write-Failure "  ✗ Frontend build failed"
+                Write-Failure "  [ERROR] Frontend build failed"
                 exit 1
             }
         } finally {
@@ -247,30 +246,25 @@ function Start-Frontend {
 
         try {
             $response = Invoke-WebRequest -Uri "http://127.0.0.1:5173" -UseBasicParsing -TimeoutSec 2 -ErrorAction SilentlyContinue
-            Write-Success "  ✓ Frontend development server running at http://127.0.0.1:5173"
+            Write-Success "  [OK] Frontend development server running at http://127.0.0.1:5173"
             return $frontendJob
         } catch {
-            Write-Warning "  ⚠ Frontend may still be starting (check http://127.0.0.1:5173 in browser)"
+            Write-Warning "  [WARN] Frontend may still be starting (check http://127.0.0.1:5173 in browser)"
             return $frontendJob
         }
     }
 }
 
 function Show-ServiceStatus {
-    Write-Host "`n╔════════════════════════════════════════════════╗" -ForegroundColor Green
-    Write-Host "║          CyberSage is now running!            ║" -ForegroundColor Green
-    Write-Host "╚════════════════════════════════════════════════╝" -ForegroundColor Green
+    Write-Host "`n============================================================" -ForegroundColor Green
+    Write-Host "          CyberSage is now running!" -ForegroundColor Green
+    Write-Host "============================================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "  🌐 Frontend:  " -NoNewline -ForegroundColor Cyan
-    Write-Host "http://127.0.0.1:5173" -ForegroundColor White
-    Write-Host "  🔧 Backend:   " -NoNewline -ForegroundColor Cyan
-    Write-Host "http://127.0.0.1:8000" -ForegroundColor White
-    Write-Host "  📚 API Docs:  " -NoNewline -ForegroundColor Cyan
-    Write-Host "http://127.0.0.1:8000/docs" -ForegroundColor White
+    Write-Host "  Frontend:  http://127.0.0.1:5173" -ForegroundColor Cyan
+    Write-Host "  Backend:   http://127.0.0.1:8000" -ForegroundColor Cyan
+    Write-Host "  API Docs:  http://127.0.0.1:8000/docs" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "Press " -NoNewline
-    Write-Host "Ctrl+C" -ForegroundColor Yellow -NoNewline
-    Write-Host " to stop all services"
+    Write-Host "Press Ctrl+C to stop all services" -ForegroundColor Yellow
     Write-Host ""
 }
 
@@ -295,20 +289,20 @@ try {
 
         # Check if either job has failed
         if ($backendJob.State -eq "Failed") {
-            Write-Failure "`n✗ Backend has stopped unexpectedly"
+            Write-Failure "`n[ERROR] Backend has stopped unexpectedly"
             Receive-Job $backendJob
             break
         }
 
         if ($frontendJob.State -eq "Failed") {
-            Write-Failure "`n✗ Frontend has stopped unexpectedly"
+            Write-Failure "`n[ERROR] Frontend has stopped unexpectedly"
             Receive-Job $frontendJob
             break
         }
     }
 
 } catch {
-    Write-Failure "`n✗ Error: $_"
+    Write-Failure "`n[ERROR] $_"
     exit 1
 } finally {
     # Cleanup on exit
@@ -319,5 +313,5 @@ try {
         Remove-Job $_
     }
 
-    Write-Success "✓ All services stopped"
+    Write-Success "[SUCCESS] All services stopped"
 }
